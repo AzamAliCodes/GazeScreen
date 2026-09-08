@@ -102,7 +102,9 @@ export default function AnalysisPage() {
     });
 
     const runSteps = async () => {
-      const total = 500;
+      const total = 3200;
+      const generatingTime = 1000;
+      const checklistHold = 1300;
       const start = Date.now();
 
       while (true) {
@@ -115,8 +117,10 @@ export default function AnalysisPage() {
         await new Promise((r) => setTimeout(r, 30));
       }
 
+      setCurrentStep(ANALYSIS_STEPS.length);
       setDone(true);
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, generatingTime));
+      await new Promise((r) => setTimeout(r, checklistHold));
       window.scrollTo(0, 0);
       navigate('/report');
     };
