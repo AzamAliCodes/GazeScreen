@@ -9,12 +9,12 @@ import { useSession } from '../context/SessionContext';
 import { deriveMetrics, computeRiskScore } from '../lib/classifier';
 
 const ANALYSIS_STEPS = [
-  { id: 'extract',   label: 'Extracting pupil fixation coordinates', duration: 380 },
-  { id: 'saccades',  label: 'Calculating saccadic velocity & vector paths', duration: 340 },
-  { id: 'blink',     label: 'Evaluating involuntary blink dynamics', duration: 300 },
-  { id: 'social',    label: 'Computing social scene attention ratio', duration: 360 },
-  { id: 'classify',  label: 'Running on-device heuristic risk model', duration: 420 },
-  { id: 'report',    label: 'Synthesizing clinical screening summary', duration: 320 },
+  { id: 'extract',   label: 'Extracting pupil fixation coordinates', duration: 90 },
+  { id: 'saccades',  label: 'Calculating saccadic velocity & vector paths', duration: 80 },
+  { id: 'blink',     label: 'Evaluating involuntary blink dynamics', duration: 70 },
+  { id: 'social',    label: 'Computing social scene attention ratio', duration: 85 },
+  { id: 'classify',  label: 'Running on-device heuristic risk model', duration: 95 },
+  { id: 'report',    label: 'Synthesizing clinical screening summary', duration: 80 },
 ];
 
 function AnalysisStep({ step, status, delay }) {
@@ -87,39 +87,36 @@ export default function AnalysisPage() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    let progValue = 0;
+    // Compute result immediately — no need to wait for animation
+    const age = session.childAge || 4;
+    const metrics = deriveMetrics(session.gazePoints, session.blinkEvents, session.totalDuration || 60, age);
+    const result = computeRiskScore(metrics, age);
+
+    updateSession({
+      metrics,
+      riskLevel: result.level,
+      riskScore: result.score,
+      cohort: result.cohort,
+      cohortId: result.cohortId,
+      completed: true,
+    });
 
     const runSteps = async () => {
-      for (let i = 0; i < ANALYSIS_STEPS.length; i++) {
-        setCurrentStep(i);
-        const dur = ANALYSIS_STEPS[i].duration;
-        const start = progValue;
-        const end = ((i + 1) / ANALYSIS_STEPS.length) * 100;
-        const frames = Math.round(dur / 40);
+      const total = 500;
+      const start = Date.now();
 
-        for (let f = 0; f <= frames; f++) {
-          await new Promise((r) => setTimeout(r, 40));
-          setProgress(Math.round(start + (end - start) * (f / frames)));
-        }
-        progValue = end;
+      while (true) {
+        const elapsed = Date.now() - start;
+        const pct = Math.min(100, Math.round((elapsed / total) * 100));
+        const idx = Math.min(ANALYSIS_STEPS.length - 1, Math.floor((pct / 100) * ANALYSIS_STEPS.length));
+        setCurrentStep(idx);
+        setProgress(pct);
+        if (pct >= 100) break;
+        await new Promise((r) => setTimeout(r, 30));
       }
 
-      // Compute result locally with age-stratified norms
-      const age = session.childAge || 4;
-      const metrics = deriveMetrics(session.gazePoints, session.blinkEvents, session.totalDuration || 60, age);
-      const result = computeRiskScore(metrics, age);
-
-      updateSession({
-        metrics,
-        riskLevel: result.level,
-        riskScore: result.score,
-        cohort: result.cohort,
-        cohortId: result.cohortId,
-        completed: true,
-      });
-
       setDone(true);
-      await new Promise((r) => setTimeout(r, 450));
+      await new Promise((r) => setTimeout(r, 150));
       window.scrollTo(0, 0);
       navigate('/report');
     };

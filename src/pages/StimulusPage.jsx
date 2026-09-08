@@ -92,10 +92,9 @@ export default function StimulusPage() {
     const duration = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 : 60;
     updateSession({ completedAt: Date.now(), totalDuration: duration });
 
-    // Smooth transition delay to let completion overlay breathe
     setTimeout(() => {
       navigate('/analysis');
-    }, 900);
+    }, 400);
   }, [isCompleting, navigate, updateSession]);
 
   const elapsed = Math.round(progress * (TOTAL_STIMULUS_DURATION / 1000));
