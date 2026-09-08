@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { useLayoutEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import LandingPage from './pages/LandingPage';
 import ConsentPage from './pages/ConsentPage';
@@ -9,10 +10,25 @@ import ReportPage from './pages/ReportPage';
 import { SessionProvider } from './context/SessionContext';
 import './App.css';
 
+function RedirectOnHardLoad() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  useLayoutEffect(() => {
+    if (pathname !== '/') {
+      navigate('/', { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return null;
+}
+
 function App() {
   return (
     <SessionProvider>
       <BrowserRouter>
+        <RedirectOnHardLoad />
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/"            element={<LandingPage />} />
